@@ -32,6 +32,14 @@ class RlaySchemaRegistry {
     return results.map((val, i) => [keys[i], val[1]]);
   }
 
+  async writeSchemaToClient (rlayClient) {
+    rlayClient.initSchema(
+      await this.readSchemaCids(),
+      await this.readSchemaPayloads()
+    );
+    rlayClient.initClient();
+  }
+
   async writeSchemaFromClient (rlayClient) {
     const schema = rlayClient.schema;
     const schemaKeys = Object.keys(schema);
