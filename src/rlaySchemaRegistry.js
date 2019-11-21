@@ -22,9 +22,11 @@ class RlaySchemaRegistry {
     }
   }
 
-  /*
-   * returns [key, value]
-   * note that redis.multi returns [null, value]
+  /**
+   * Return [key, value] of redis cid and payload keys and their values
+   *
+   * @param {String} typeKey - either `cid` or `payload`
+   * @return {Array} - [key, value] (note: redis.multi returns [null,value])
    */
   async _findKeyValues (typeKey) {
     const keys = await this.db.keys(`${this.dbNamespace}${typeKey}*`);
@@ -33,9 +35,13 @@ class RlaySchemaRegistry {
   }
 
   async writeSchemaToClient (rlayClient) {
+    const [cids, payloads] = await Promise.all([
+      this.readSchemaCids(),
+      this.readSchemaPayloads()
+    ]);
     rlayClient.initSchema(
-      await this.readSchemaCids(),
-      await this.readSchemaPayloads()
+      cids,
+      payloads
     );
     rlayClient.initClient();
   }
@@ -55,9 +61,10 @@ class RlaySchemaRegistry {
       }
       return schemaPayloads;
     }, []);
-    const cidResponse = await this.writeSchemaCids(schemaCids);
-    const payloadResponse = await this.writeSchemaPayloads(schemaPayloads);
-    return [cidResponse, payloadResponse];
+    return Promise.all([
+      this.writeSchemaCids(schemaCids),
+      this.writeSchemaPayloads(schemaPayloads)
+    ]);
   }
 
   async writeSchemaCids (schemaCids) {
