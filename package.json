@@ -1,6 +1,6 @@
 {
   "name": "@rlay/schema-registry",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Remote registry client for your rlay schema via redis",
   "main": "src/index.js",
   "scripts": {
