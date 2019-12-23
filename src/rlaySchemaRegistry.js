@@ -60,7 +60,8 @@ class RlaySchemaRegistry {
     const schemaKeys = Object.keys(schema);
     // get schema CIDs from client
     const schemaCids = schemaKeys.reduce((schemaCids, key) => {
-      return {...schemaCids, [key]: schema[key].cid}
+      schemaCids[key] = schema[key].cid;
+      return schemaCids;
     }, {});
 
     // get schema payload from client
@@ -86,7 +87,7 @@ class RlaySchemaRegistry {
 
     const startMultiSet = Date.now();
     const result = this.db.multi(commandArgs).exec();
-    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startCommandArgs}ms`);
+    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startMultiSet}ms`);
 
     return result;
   }
@@ -112,7 +113,7 @@ class RlaySchemaRegistry {
 
     const startMultiSet = Date.now();
     const result = this.db.multi(commandArgs).exec();
-    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startCommandArgs}ms`);
+    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startMultiSet}ms`);
 
     return result;
   }
