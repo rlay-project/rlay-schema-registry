@@ -4,7 +4,7 @@
   "description": "Remote registry client for your rlay schema via redis",
   "main": "src/index.js",
   "scripts": {
-    "test": "mocha --exit"
+    "test": "DEBUG=rlay:schemaRegistry*duration* mocha test/test.js --exit"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "mocha": "^6.2.0"
   },
   "dependencies": {
-    "check-types": "^9.0.1"
+    "check-types": "^9.0.1",
+    "debug": "^4.1.1"
   }
 }

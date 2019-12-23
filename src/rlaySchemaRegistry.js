@@ -1,6 +1,7 @@
 const check = require('check-types');
 const { SchemaCids } = require('./schemaCids');
 const { SchemaPayloads } = require('./schemaPayloads');
+const debug = require('./debug');
 
 const RSR_NAMESPACE = 'rlaySchemaRegistry:';
 
@@ -28,9 +29,17 @@ class RlaySchemaRegistry {
    * @param {String} typeKey - either `cid` or `payload`
    * @return {Array} - [key, value] (note: redis.multi returns [null,value])
    */
-  async _findKeyValues (typeKey) {
+  async _findKeyValues (typeKey, _debug) {
+    let debug = _debug || debug;
+    const startKeys = Date.now();
     const keys = await this.db.keys(`${this.dbNamespace}${typeKey}*`);
+    debug.extend('findKeyValues:redis:keys')(keys.length);
+    debug.extend('findKeyValues:redis:keys:duration')(`${Date.now() - startKeys}ms`);
+
+    const startKeysGet = Date.now();
     const results = await this.db.multi(keys.map(key => ['get', key])).exec();
+    debug.extend('findKeyValues:redis:multi:get:duration')(`${Date.now() - startKeysGet}ms`);
+
     return results.map((val, i) => [keys[i], val[1]]);
   }
 
@@ -68,24 +77,53 @@ class RlaySchemaRegistry {
   }
 
   async writeSchemaCids (schemaCids) {
+    const thisDebug = debug.extend('writeSchemaCids');
     const schemaCidsClass = new SchemaCids(this, schemaCids);
-    return this.db.multi(schemaCidsClass.toCommands()).exec();
+
+    const startCommandArgs = Date.now();
+    const commandArgs = schemaCidsClass.toCommands();
+    thisDebug.extend('toCommands:duration')(`${Date.now() - startCommandArgs}ms`);
+
+    const startMultiSet = Date.now();
+    const result = this.db.multi(commandArgs).exec();
+    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startCommandArgs}ms`);
+
+    return result;
   }
 
   async readSchemaCids () {
-    const result = await this._findKeyValues(SchemaCids.typeKey);
+    const thisDebug = debug.extend('readSchemaCids');
+    const result = await this._findKeyValues(SchemaCids.typeKey, thisDebug);
+
+    const startFromRedis = Date.now();
     const schemaCidsClass = SchemaCids.fromRedis(this, result);
+    thisDebug.extend('fromRedis:duration')(`${Date.now() - startFromRedis}ms`);
+
     return schemaCidsClass.data;
   }
 
   async writeSchemaPayloads (schemaPayloads) {
+    const thisDebug = debug.extend('writeSchemaPayloads');
     const schemaPayloadsClass = new SchemaPayloads(this, schemaPayloads);
-    return this.db.multi(schemaPayloadsClass.toCommands()).exec();
+
+    const startCommandArgs = Date.now();
+    const commandArgs = schemaPayloadsClass.toCommands();
+    thisDebug.extend('toCommands:duration')(`${Date.now() - startCommandArgs}ms`);
+
+    const startMultiSet = Date.now();
+    const result = this.db.multi(commandArgs).exec();
+    thisDebug.extend('redis:multi:set:duration')(`${Date.now() - startCommandArgs}ms`);
+
+    return result;
   }
 
   async readSchemaPayloads () {
-    const result = await this._findKeyValues(SchemaPayloads.typeKey);
+    const thisDebug = debug.extend('readSchemaPayloads');
+    const result = await this._findKeyValues(SchemaPayloads.typeKey, thisDebug);
+
+    const startFromRedis = Date.now();
     const schemaPayloadsClass = SchemaPayloads.fromRedis(this, result);
+    thisDebug.extend('fromRedis:duration')(`${Date.now() - startFromRedis}ms`);
     return schemaPayloadsClass.data;
   }
 }
